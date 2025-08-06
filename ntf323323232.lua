@@ -114,34 +114,39 @@ local function clean(str)
     return tostring(str or ''):gsub('%*+', ''):gsub('^%s*(.-)%s*$', '%1')
 end
 
--- Helper: Calculate total multiplier from mutation and traits using the formula
+-- Helper: Calculate total multiplier using the formula:
+-- Total Multiplier = Mutation Multiplier + ∑(Trait Multipliers) - (N-1)
+-- Where N = 1 mutation + number of traits
 local function calculateMultiplier(mutation, traits)
-    local totalMultiplier = 0
-    local multiplierCount = 0
+    local sumOfMultipliers = 0
+    local N = 0 -- Total number of multipliers
     
     -- Add mutation multiplier
     if mutation and mutationMultipliers[mutation] then
-        totalMultiplier = totalMultiplier + mutationMultipliers[mutation]
-        multiplierCount = multiplierCount + 1
+        sumOfMultipliers = sumOfMultipliers + mutationMultipliers[mutation]
+        N = N + 1
     else
         -- Default mutation if none specified
-        totalMultiplier = 1
-        multiplierCount = 1
+        sumOfMultipliers = sumOfMultipliers + 1
+        N = N + 1
     end
     
     -- Add trait multipliers
     if traits and type(traits) == "table" then
         for _, trait in ipairs(traits) do
             if traitMultipliers[trait] then
-                totalMultiplier = totalMultiplier + traitMultipliers[trait]
-                multiplierCount = multiplierCount + 1
+                sumOfMultipliers = sumOfMultipliers + traitMultipliers[trait]
+                N = N + 1
             end
         end
     end
     
-    -- Apply formula: Total = Sum of multipliers - (N-1)
-    if multiplierCount > 1 then
-        totalMultiplier = totalMultiplier - (multiplierCount - 1)
+    -- Apply formula: Total = Sum of all multipliers - (N-1)
+    local totalMultiplier = sumOfMultipliers - (N - 1)
+    
+    -- Ensure multiplier is at least 1
+    if totalMultiplier < 1 then
+        totalMultiplier = 1
     end
     
     return totalMultiplier
